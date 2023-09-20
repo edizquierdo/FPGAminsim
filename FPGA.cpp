@@ -59,7 +59,20 @@ void FPGA::SetBlockSize(int newsize)
 // Control
 // *******
 
-// Randomize the states or outputs of a circuit.
+// Initialize the states or outputs of a circuit.
+void FPGA::ZeroBlockState()
+{
+	for (int i = 1; i <= size; i++)
+		for (int j = 1; j <= size; j++)
+        	SetBlockState(i, j, 0);
+}
+
+void FPGA::OneBlockState()
+{
+	for (int i = 1; i <= size; i++)
+		for (int j = 1; j <= size; j++)
+        	SetBlockState(i, j, 1);
+}
 
 void FPGA::RandomizeBlockState()
 {

@@ -46,6 +46,8 @@ class FPGA {
         // friend istream& operator>>(istream& is, FPGA& c);
                             
         // Control
+        void ZeroBlockState();
+        void OneBlockState();
         void RandomizeBlockState();
         void RandomizeBlockState(RandomState &rs);
         void Step();
