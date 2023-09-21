@@ -62,30 +62,39 @@ void FPGA::SetBlockSize(int newsize)
 // Initialize the states or outputs of a circuit.
 void FPGA::ZeroBlockState()
 {
-	for (int i = 1; i <= size; i++)
-		for (int j = 1; j <= size; j++)
+	for (int i = 1; i <= size; i++){
+		for (int j = 1; j <= size; j++){
         	SetBlockState(i, j, 0);
+		}
+	}
 }
 
 void FPGA::OneBlockState()
 {
-	for (int i = 1; i <= size; i++)
-		for (int j = 1; j <= size; j++)
+	for (int i = 1; i <= size; i++){
+		for (int j = 1; j <= size; j++){
         	SetBlockState(i, j, 1);
+		}
+	}
 }
 
 void FPGA::RandomizeBlockState()
 {
-	for (int i = 1; i <= size; i++)
-		for (int j = 1; j <= size; j++)
+	for (int i = 1; i <= size; i++){
+		for (int j = 1; j <= size; j++){
+			//cout << i << " " << j << " " << ProbabilisticChoice(0.5) << endl;
         	SetBlockState(i, j, ProbabilisticChoice(0.5));
+		}
+	}
 }
 
 void FPGA::RandomizeBlockState(RandomState &rs)
 {
-	for (int i = 1; i <= size; i++)
-		for (int j = 1; j <= size; j++)
+	for (int i = 1; i <= size; i++){
+		for (int j = 1; j <= size; j++){
         	SetBlockState(i, j, rs.ProbabilisticChoice(0.5));
+		}
+	}
 }
 
 // Integrate the FPGA one step 
@@ -97,8 +106,20 @@ void FPGA::Step()
   for (int i = 1; i <= size; i++) {
 	for (int j = 1; j <= size; j++) {
 		// Get A and B inputs
-		A = states[Ax[i][j]][Ay[i][j]];
-		B = states[Bx[i][j]][By[i][j]];
+		if ((Ax[i][j]>0) && (Ax[i][j]<=size) && (Ay[i][j]>0) && (Ay[i][j]<=size)){
+			// Make sure they are referring to an actual block, otherwise input set to 0
+			A = states[Ax[i][j]][Ay[i][j]];
+		}
+		else{
+			A = 0;
+		}
+		if ((Bx[i][j]>0) && (Bx[i][j]<=size) && (By[i][j]>0) && (By[i][j]<=size)){
+			// Make sure they are referring to an actual block, otherwise input set to 0
+			B = states[Bx[i][j]][By[i][j]];
+		}
+		else{
+			B = 0;
+		}
 		// NAND
 		if (gates[i][j] == 0){ 
 			if ((A == 1) && (B == 1))
