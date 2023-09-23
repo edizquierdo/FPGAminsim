@@ -1,11 +1,11 @@
-#include "TSearch.h"
+#include "BSearch.h"
 #include "FPGA.h"
 #include "random.h"
 
 // #define PRINTOFILE
 
 // Task params
-const double DUR = 100; 
+const double DUR = 500; 
 
 // EA params
 const int POPSIZE = 10; //96;
@@ -27,24 +27,24 @@ int	VectSize = 5*N*N; // 2 bits for input A, 2 bits for input B, and 1 bit for G
 // ------------------------------------
 // Fitness function
 // ------------------------------------
-double FitnessFunction(TVector<double> &genotype, RandomState &rs)
+double FitnessFunction(TVector<int> &g, RandomState &rs)
 {
-	//cout << "\n" << genotype << endl;
+	//cout << "\n" << g << endl;
 
 	// Create the board
 	FPGA board(N);
 
-	// Change the genotype to binary phenotype
-	TVector<int> g;
-	g.SetBounds(1,VectSize);
-	for (int i = 1; i <= VectSize; i++){
-		if (genotype[i] >= 0){
-			g[i] = 1;
-		}
-		else{
-			g[i] = 0;
-		}
-	}
+	// // Change the genotype to binary phenotype
+	// TVector<int> g;
+	// g.SetBounds(1,VectSize);
+	// for (int i = 1; i <= VectSize; i++){
+	// 	if (genotype[i] >= 0){
+	// 		g[i] = 1;
+	// 	}
+	// 	else{
+	// 		g[i] = 0;
+	// 	}
+	// }
 
 	// Set gates and inputs from genotype to board
 	int k = 1;
@@ -136,7 +136,7 @@ double FitnessFunction(TVector<double> &genotype, RandomState &rs)
 			}
 		}
 	}
-	cout << total/DUR << endl;
+	//cout << total/DUR << endl;
 	return total/DUR;
 }
 
@@ -360,9 +360,9 @@ void EvolutionaryRunDisplay(int Generation, double BestPerf, double AvgPerf, dou
 	cout << Generation << " " << BestPerf << " " << AvgPerf << " " << PerfVar << endl;
 }
 
-void ResultsDisplay(TSearch &s)
+void ResultsDisplay(BSearch &s)
 {
-	TVector<double> bestVector;
+	TVector<int> bestVector;
 	ofstream BestIndividualFile;
 
 	// Save the genotype of the best individual
@@ -381,7 +381,7 @@ int main (int argc, const char* argv[])
 	if (argc == 2)
 		randomseed += atoi(argv[1]);
 
-	TSearch s(VectSize);
+	BSearch s(VectSize);
 	
 	#ifdef PRINTOFILE
 	ofstream file;
