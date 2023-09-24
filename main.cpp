@@ -2,13 +2,13 @@
 #include "FPGA.h"
 #include "random.h"
 
-// #define PRINTOFILE
+#define PRINTOFILE
 
 // Task params
-const double DUR = 500; 
+const double DUR = 10; 
 
 // EA params
-const int POPSIZE = 10; //96;
+const int POPSIZE = 32; //96;
 const int GENS = 100; //100;
 const double MUTVAR = 0.05;			
 const double CROSSPROB = 0.0;
@@ -16,7 +16,7 @@ const double EXPECTED = 1.1;
 const double ELITISM = 0.02;
 
 // FPGA params
-const int N = 5; 
+const int N = 3; 
 
 int	VectSize = 5*N*N; // 2 bits for input A, 2 bits for input B, and 1 bit for Gate
 
@@ -34,7 +34,7 @@ double FitnessFunction(TVector<int> &g, RandomState &rs)
 	// Create the board
 	FPGA board(N);
 
-	// // Change the genotype to binary phenotype
+	// Change the genotype to binary phenotype
 	// TVector<int> g;
 	// g.SetBounds(1,VectSize);
 	// for (int i = 1; i <= VectSize; i++){
@@ -247,7 +247,6 @@ double DesignedBehavior()
 	return 0.0;
 }
 
-
 // ------------------------------------
 // N Behavior
 // ------------------------------------
@@ -353,6 +352,131 @@ double RandomBehavior()
 }
 
 // ------------------------------------
+// Fitness function
+// ------------------------------------
+double RecordBehavior(TVector<int> &g)
+{
+	// Create the board
+	FPGA board(N);
+
+	// Set gates and inputs from genotype to board
+	int k = 1;
+	for (int i = 1; i <= N; i++){
+		for (int j = 1; j <= N; j++){
+			// Input A (does not check for in-bounds)
+			if ((g[k] == 0) && (g[k+1] == 0)){  // North
+				board.Ax[i][j] = i-1;
+				board.Ay[i][j] = j;
+			}
+			else{
+				if ((g[k] == 0) && (g[k+1] == 1)){  // East
+					board.Ax[i][j] = i;
+					board.Ay[i][j] = j+1;
+				}
+				else{
+					if ((g[k] == 1) && (g[k+1] == 0)){	// West
+						board.Ax[i][j] = i;
+						board.Ay[i][j] = j-1;
+					}
+					else{		// South
+							board.Ax[i][j] = i+1;
+							board.Ay[i][j] = j;						
+					}
+				}
+			}
+			k+=2;
+			// Input B (does not check for in-bounds)
+			if ((g[k] == 0) && (g[k+1] == 0)){  // North
+				board.Bx[i][j] = i-1;
+				board.By[i][j] = j;
+			}
+			else{
+				if ((g[k] == 0) && (g[k+1] == 1)){  // East
+					board.Bx[i][j] = i;
+					board.By[i][j] = j+1;
+				}
+				else{
+					if ((g[k] == 1) && (g[k+1] == 0)){	// West
+						board.Bx[i][j] = i;
+						board.By[i][j] = j-1;
+					}
+					else{		// South
+							board.Bx[i][j] = i+1;
+							board.By[i][j] = j;						
+					}
+				}
+			}
+			k+=2;
+			// Gate
+			board.gates[i][j] = g[k];
+			k++;
+		}
+	}
+
+	// Initialize state
+	board.ZeroBlockState();
+
+	cout << board.gates << endl;
+	
+	// Count the number of times blocks change
+	double total = 0.0;
+	TMatrix<int> previousboardstate;
+	previousboardstate.SetBounds(1,N,1,N);
+	previousboardstate.FillContents(0.0);
+	// Save latest state
+	for (int i = 1; i <= N; i++){
+		for (int j = 1; j <= N; j++){
+			previousboardstate[i][j] = board.states[i][j];
+		}
+	}
+
+	// Write to file
+	ofstream fout("states.dat");
+	for (int i = 1; i <= N; i++)
+	{
+		for (int j = 1; j <= N; j++)
+		{
+			fout << board.states[i][j] << " ";
+		}
+	}
+	fout << endl;
+
+	// Simulate for DUR steps
+	for (int t = 1; t <= DUR; t++){
+		board.Step();
+
+		for (int i = 1; i <= N; i++)
+		{
+			for (int j = 1; j <= N; j++)
+			{
+				fout << board.states[i][j] << " ";
+			}
+		}
+		fout << endl;
+
+		double portion = 0.0;
+		// Analyze difference and count
+		for (int i = 1; i <= N; i++){
+			for (int j = 1; j <= N; j++){
+				if (board.states[i][j] != previousboardstate[i][j]){
+					portion += 1.0;
+				}
+			}
+		}
+		total += portion/(N*N);
+		// Save latest state
+		for (int i = 1; i <= N; i++){
+			for (int j = 1; j <= N; j++){
+				previousboardstate[i][j] = board.states[i][j];
+			}
+		}
+	}
+	fout.close();
+	cout << total/DUR << endl;
+	return total/DUR;
+}
+
+// ------------------------------------
 // Display functions
 // ------------------------------------
 void EvolutionaryRunDisplay(int Generation, double BestPerf, double AvgPerf, double PerfVar)
@@ -412,6 +536,6 @@ int main (int argc, const char* argv[])
 	s.SetEvaluationFunction(FitnessFunction); 
 	s.ExecuteSearch();
 	
-	//DesignedBehavior();
+	RecordBehavior(s.BestIndividual());
 	return 0;
 }
