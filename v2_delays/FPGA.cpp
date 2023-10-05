@@ -107,7 +107,7 @@ void FPGA::UpdateHistory()
 	for (int t = 1; t < maxdelay; t++){
 		for (int i = 1; i <= size; i++) {
 			for (int j = 1; j <= size; j++) {
-				history[i+size*(j-1)][t+1] = history[i+size*j][t];
+				history[i+size*(j-1)][t+1] = history[i+size*(j-1)][t];
 			}
 		}
 	}
@@ -134,10 +134,10 @@ void FPGA::Step()
 			// Make sure they are referring to an actual block, otherwise input set to 0
 			// Set it according to their respective delay
 			if (gates[x][y] == 0){ 
-				delay = 2;
+				delay = 1; //No delay //2;
 			}
 			else{
-				delay = 3;
+				delay = 1; //No delay //3;
 			}
 			A = history[x+size*(y-1)][delay];
 		}
@@ -149,10 +149,10 @@ void FPGA::Step()
 		if ((x>0) && (x<=size) && (y>0) && (y<=size)){
 			// Make sure they are referring to an actual block, otherwise input set to 0
 			if (gates[x][y] == 0){ 
-				delay = 2;
+				delay = 1; //No delay //2;
 			}
 			else{
-				delay = 3;
+				delay = 1; //No delay //3;
 			}
 			B = history[x+size*(y-1)][delay];
 

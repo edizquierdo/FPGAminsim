@@ -2,7 +2,7 @@
 #include "FPGA.h"
 #include "random.h"
 
-#define PRINTOFILE
+//#define PRINTOFILE
 
 // Task params
 const double DUR = 10; 
@@ -16,7 +16,7 @@ const double EXPECTED = 1.1;
 const double ELITISM = 0.02;
 
 // FPGA params
-const int N = 3; 
+const int N = 2; 
 
 int	VectSize = 5*N*N; // 2 bits for input A, 2 bits for input B, and 1 bit for Gate
 
@@ -29,22 +29,8 @@ int	VectSize = 5*N*N; // 2 bits for input A, 2 bits for input B, and 1 bit for G
 // ------------------------------------
 double FitnessFunction(TVector<int> &g, RandomState &rs)
 {
-	//cout << "\n" << g << endl;
-
 	// Create the board
 	FPGA board(N);
-
-	// Change the genotype to binary phenotype
-	// TVector<int> g;
-	// g.SetBounds(1,VectSize);
-	// for (int i = 1; i <= VectSize; i++){
-	// 	if (genotype[i] >= 0){
-	// 		g[i] = 1;
-	// 	}
-	// 	else{
-	// 		g[i] = 0;
-	// 	}
-	// }
 
 	// Set gates and inputs from genotype to board
 	int k = 1;
@@ -103,19 +89,19 @@ double FitnessFunction(TVector<int> &g, RandomState &rs)
 	// Initialize state
 	board.ZeroBlockState();
 
-	//cout << board.gates << endl;
-	
 	// Count the number of times blocks change
 	double total = 0.0;
 	TMatrix<int> previousboardstate;
 	previousboardstate.SetBounds(1,N,1,N);
 	previousboardstate.FillContents(0.0);
+
 	// Save latest state
 	for (int i = 1; i <= N; i++){
 		for (int j = 1; j <= N; j++){
 			previousboardstate[i][j] = board.states[i][j];
 		}
 	}
+
 	// Simulate for DUR steps
 	for (int t = 1; t <= DUR; t++){
 		board.Step();
@@ -137,7 +123,6 @@ double FitnessFunction(TVector<int> &g, RandomState &rs)
 			}
 		}
 	}
-	//cout << total/DUR << endl;
 	return total/DUR;
 }
 
@@ -519,24 +504,25 @@ int main (int argc, const char* argv[])
 	seedfile.close();
 	#endif
 	
-	// Configure the search
-	s.SetRandomSeed(randomseed);
-	s.SetSearchResultsDisplayFunction(ResultsDisplay);
-	s.SetPopulationStatisticsDisplayFunction(EvolutionaryRunDisplay);
-	s.SetSelectionMode(RANK_BASED);
-	s.SetReproductionMode(GENETIC_ALGORITHM);
-	s.SetPopulationSize(POPSIZE);
-	s.SetMaxGenerations(GENS);
-	s.SetCrossoverProbability(CROSSPROB);
-	s.SetCrossoverMode(UNIFORM);
-	s.SetMutationVariance(MUTVAR);
-	s.SetMaxExpectedOffspring(EXPECTED);
-	s.SetElitistFraction(ELITISM);
-	s.SetSearchConstraint(1);
+	// // Configure the search
+	// s.SetRandomSeed(randomseed);
+	// s.SetSearchResultsDisplayFunction(ResultsDisplay);
+	// s.SetPopulationStatisticsDisplayFunction(EvolutionaryRunDisplay);
+	// s.SetSelectionMode(RANK_BASED);
+	// s.SetReproductionMode(GENETIC_ALGORITHM);
+	// s.SetPopulationSize(POPSIZE);
+	// s.SetMaxGenerations(GENS);
+	// s.SetCrossoverProbability(CROSSPROB);
+	// s.SetCrossoverMode(UNIFORM);
+	// s.SetMutationVariance(MUTVAR);
+	// s.SetMaxExpectedOffspring(EXPECTED);
+	// s.SetElitistFraction(ELITISM);
+	// s.SetSearchConstraint(1);
 	
-	s.SetEvaluationFunction(FitnessFunction); 
-	s.ExecuteSearch();
-	
-	RecordBehavior(s.BestIndividual());
+	// s.SetEvaluationFunction(FitnessFunction); 
+	// s.ExecuteSearch();
+	// RecordBehavior(s.BestIndividual());
+
+	DesignedBehavior();
 	return 0;
 }

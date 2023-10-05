@@ -2,13 +2,13 @@
 #include "FPGA.h"
 #include "random.h"
 
-#define PRINTOFILE
+//#define PRINTOFILE
 
 // Task params
-const double DUR = 10; 
+const double DUR = 100; 
 
 // EA params
-const int POPSIZE = 32; //96;
+const int POPSIZE = 96; //96;
 const int GENS = 100; //100;
 const double MUTVAR = 0.05;			
 const double CROSSPROB = 0.0;
@@ -16,7 +16,7 @@ const double EXPECTED = 1.1;
 const double ELITISM = 0.02;
 
 // FPGA params
-const int N = 3; 
+const int N = 5; 
 
 int	VectSize = 5*N*N; // 2 bits for input A, 2 bits for input B, and 1 bit for Gate
 
@@ -138,6 +138,91 @@ double FitnessFunction(TVector<int> &g, RandomState &rs)
 	}
 	//cout << total/DUR << endl;
 	return total/DUR;
+}
+
+// ------------------------------------
+// Fitness function
+// ------------------------------------
+double FitnessFunction2(TVector<int> &g, RandomState &rs)
+{
+	// Create the board
+	FPGA board(N);
+
+	// Set gates and inputs from genotype to board
+	int k = 1;
+	for (int i = 1; i <= N; i++){
+		for (int j = 1; j <= N; j++){
+			// Input A (does not check for in-bounds)
+			if ((g[k] == 0) && (g[k+1] == 0)){  // North
+				board.Ax[i][j] = i-1;
+				board.Ay[i][j] = j;
+			}
+			else{
+				if ((g[k] == 0) && (g[k+1] == 1)){  // East
+					board.Ax[i][j] = i;
+					board.Ay[i][j] = j+1;
+				}
+				else{
+					if ((g[k] == 1) && (g[k+1] == 0)){	// West
+						board.Ax[i][j] = i;
+						board.Ay[i][j] = j-1;
+					}
+					else{		// South
+							board.Ax[i][j] = i+1;
+							board.Ay[i][j] = j;						
+					}
+				}
+			}
+			k+=2;
+			// Input B (does not check for in-bounds)
+			if ((g[k] == 0) && (g[k+1] == 0)){  // North
+				board.Bx[i][j] = i-1;
+				board.By[i][j] = j;
+			}
+			else{
+				if ((g[k] == 0) && (g[k+1] == 1)){  // East
+					board.Bx[i][j] = i;
+					board.By[i][j] = j+1;
+				}
+				else{
+					if ((g[k] == 1) && (g[k+1] == 0)){	// West
+						board.Bx[i][j] = i;
+						board.By[i][j] = j-1;
+					}
+					else{		// South
+							board.Bx[i][j] = i+1;
+							board.By[i][j] = j;						
+					}
+				}
+			}
+			k+=2;
+			// Gate
+			board.gates[i][j] = g[k];
+			k++;
+		}
+	}
+
+	// Initialize state
+	board.ZeroBlockState();
+
+	// Count the number of times ONE block changes
+	double total = 0.0;
+
+	// Save latest state
+	int previousState = board.states[1][1];
+
+	// Simulate for DUR steps
+	for (int t = 1; t <= DUR; t++){
+		board.Step();
+		if (board.states[1][1] != previousState){
+			total += 1.0;
+		}
+		// Save latest state
+		previousState = board.states[1][1];
+	}
+	total = 1 - ((fabs(0.5 - (total/DUR)))/0.5);
+	//cout << total << endl;
+	return total;
 }
 
 // ------------------------------------
@@ -415,11 +500,12 @@ double RecordBehavior(TVector<int> &g)
 
 	// Initialize state
 	board.ZeroBlockState();
-
-	cout << board.gates << endl;
+	
+	cout << board << endl;
 	
 	// Count the number of times blocks change
-	double total = 0.0;
+	double total = 0.0, total2=0.0;
+	int previousState = board.states[1][1];
 	TMatrix<int> previousboardstate;
 	previousboardstate.SetBounds(1,N,1,N);
 	previousboardstate.FillContents(0.0);
@@ -464,15 +550,20 @@ double RecordBehavior(TVector<int> &g)
 			}
 		}
 		total += portion/(N*N);
+		if (board.states[1][1] != previousState){
+			total2 += 1.0;
+		}
 		// Save latest state
 		for (int i = 1; i <= N; i++){
 			for (int j = 1; j <= N; j++){
 				previousboardstate[i][j] = board.states[i][j];
 			}
 		}
+		previousState = board.states[1][1];
 	}
 	fout.close();
-	cout << total/DUR << endl;
+	cout << "T1:\t" <<  total/DUR << endl;
+	cout << "T2:\t" << 1 - ((fabs(0.5 - (total2/DUR)))/0.5) << endl;
 	return total/DUR;
 }
 
@@ -533,7 +624,7 @@ int main (int argc, const char* argv[])
 	s.SetElitistFraction(ELITISM);
 	s.SetSearchConstraint(1);
 	
-	s.SetEvaluationFunction(FitnessFunction); 
+	s.SetEvaluationFunction(FitnessFunction2); 
 	s.ExecuteSearch();
 	
 	RecordBehavior(s.BestIndividual());
