@@ -155,21 +155,21 @@ ostream& operator<<(ostream& os, FPGA& c)
 	// Set the precision
 	os << setprecision(32);
 	// Write the size
-	os << c.size << endl << endl;
+	os << "Size: " << c.size << endl << endl << "Gates: " <<endl;
 	// Write the Gates
 	for (int i = 1; i <= c.size; i++) {
 		for (int j = 1; j <= c.size; j++)
 			os << c.gates[i][j] << " ";
 		os << endl;
 	}
-	os << endl << endl;
+	os << endl << "Input A: " << endl;
 	// Write the input A
 	for (int i = 1; i <= c.size; i++) {
 		for (int j = 1; j <= c.size; j++)
 			os << "(" << c.Ax[i][j] << "," << c.Ay[i][j] << ") ";
 		os << endl;
 	}
-	os << endl << endl;
+	os << endl << "Input B: " <<endl;
 	// Write the input B
 	for (int i = 1; i <= c.size; i++) {
 		for (int j = 1; j <= c.size; j++)

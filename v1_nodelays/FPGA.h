@@ -1,6 +1,6 @@
 // ***********************************************************
 // A class for a minimal simulation of an FPGA
-// v1. Instatenouos (i.e., no delays)
+// v1. Instantaneous (i.e., no delays)
 // ************************************************************
 
 #include "VectorMatrix.h"

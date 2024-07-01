@@ -8,15 +8,16 @@
 const double DUR = 100; 
 
 // EA params
-const int POPSIZE = 96; //96;
+const int POPSIZE = 96;
 const int GENS = 100; //100;
 const double MUTVAR = 0.05;			
 const double CROSSPROB = 0.0;
 const double EXPECTED = 1.1;
 const double ELITISM = 0.02;
+const int REPS = 100;
 
 // FPGA params
-const int N = 5; 
+const int N = 3; 
 
 int	VectSize = 5*N*N; // 2 bits for input A, 2 bits for input B, and 1 bit for Gate
 
@@ -29,22 +30,8 @@ int	VectSize = 5*N*N; // 2 bits for input A, 2 bits for input B, and 1 bit for G
 // ------------------------------------
 double FitnessFunction(TVector<int> &g, RandomState &rs)
 {
-	//cout << "\n" << g << endl;
-
 	// Create the board
 	FPGA board(N);
-
-	// Change the genotype to binary phenotype
-	// TVector<int> g;
-	// g.SetBounds(1,VectSize);
-	// for (int i = 1; i <= VectSize; i++){
-	// 	if (genotype[i] >= 0){
-	// 		g[i] = 1;
-	// 	}
-	// 	else{
-	// 		g[i] = 0;
-	// 	}
-	// }
 
 	// Set gates and inputs from genotype to board
 	int k = 1;
@@ -100,44 +87,42 @@ double FitnessFunction(TVector<int> &g, RandomState &rs)
 		}
 	}
 
-	// Initialize state
-	board.ZeroBlockState();
-
-	//cout << board.gates << endl;
-	
-	// Count the number of times blocks change
+	// Define a counter for the number of times blocks change
 	double total = 0.0;
 	TMatrix<int> previousboardstate;
 	previousboardstate.SetBounds(1,N,1,N);
 	previousboardstate.FillContents(0.0);
-	// Save latest state
-	for (int i = 1; i <= N; i++){
-		for (int j = 1; j <= N; j++){
-			previousboardstate[i][j] = board.states[i][j];
-		}
-	}
-	// Simulate for DUR steps
-	for (int t = 1; t <= DUR; t++){
-		board.Step();
-		double portion = 0.0;
-		// Analyze difference and count
-		for (int i = 1; i <= N; i++){
-			for (int j = 1; j <= N; j++){
-				if (board.states[i][j] != previousboardstate[i][j]){
-					portion += 1.0;
-				}
-			}
-		}
-		total += portion/(N*N);
+
+	for (int r = 1; r <= REPS; r++){
+		// Initialize state
+		//board.ZeroBlockState();
+		board.RandomizeBlockState();
+
 		// Save latest state
 		for (int i = 1; i <= N; i++){
 			for (int j = 1; j <= N; j++){
 				previousboardstate[i][j] = board.states[i][j];
 			}
 		}
+		// Simulate for DUR steps
+		for (int t = 1; t <= DUR; t++){
+			board.Step();
+			double portion = 0.0;
+			// Analyze difference and count it
+			for (int i = 1; i <= N; i++){
+				for (int j = 1; j <= N; j++){
+					if (board.states[i][j] != previousboardstate[i][j]){
+						portion += 1.0;
+					}
+					// Save latest state
+					previousboardstate[i][j] = board.states[i][j];
+				}
+			}
+			total += portion/(N*N);
+		}
 	}
-	//cout << total/DUR << endl;
-	return total/DUR;
+
+	return total/(DUR*REPS);
 }
 
 // ------------------------------------
@@ -328,7 +313,6 @@ double DesignedBehavior()
 	}
 	fout.close();
 
-
 	return 0.0;
 }
 
@@ -499,7 +483,8 @@ double RecordBehavior(TVector<int> &g)
 	}
 
 	// Initialize state
-	board.ZeroBlockState();
+	//board.ZeroBlockState();
+	board.RandomizeBlockState();
 	
 	cout << board << endl;
 	
@@ -563,7 +548,7 @@ double RecordBehavior(TVector<int> &g)
 	}
 	fout.close();
 	cout << "T1:\t" <<  total/DUR << endl;
-	cout << "T2:\t" << 1 - ((fabs(0.5 - (total2/DUR)))/0.5) << endl;
+	cout << "T2:\t" << total2/DUR << " " << 1 - ((fabs(0.5 - (total2/DUR)))/0.5) << endl;
 	return total/DUR;
 }
 
@@ -623,8 +608,9 @@ int main (int argc, const char* argv[])
 	s.SetMaxExpectedOffspring(EXPECTED);
 	s.SetElitistFraction(ELITISM);
 	s.SetSearchConstraint(1);
+	s.SetReEvaluationFlag(1);
 	
-	s.SetEvaluationFunction(FitnessFunction2); 
+	s.SetEvaluationFunction(FitnessFunction); 
 	s.ExecuteSearch();
 	
 	RecordBehavior(s.BestIndividual());
